@@ -119,7 +119,7 @@ def transform_line_to_scanner_frame(line, x, tf_base_to_camera, compute_jacobian
     
     # print(t_base2cam)
     
-    pdb.set_trace() 
+    #pdb.set_trace()
     
     #Pose of the camera in the world frame
     # pos_cam = np.dot(np.linalg.inv(R_world2base), t_base2cam) + t_world2base

@@ -209,7 +209,17 @@ class EkfLocalization(Ekf):
         #       find the closest predicted line and the corresponding minimum Mahalanobis distance
         #       if the minimum distance satisfies the gating criteria, add corresponding entries to v_list, Q_list, H_list
 
+        # calculate innovation
+        v_r = z_raw[1,:] - hs[1,:]
+        v_alpha = angle_diff(z_raw[0,:] - hs[0,:])
+        v = np.vstack((v_alpha, v_r))
 
+        # calculate innovation covariance
+        S = list()
+        num_lines = len(Q_raw)
+        for j in range(num_lines):
+            H = Hs[j]
+            S.append(np.matmul(H, np.matmul(self.Sigma, np.transpose(H))) + Q_raw[j])
         ########## Code ends here ##########
 
         return v_list, Q_list, H_list
