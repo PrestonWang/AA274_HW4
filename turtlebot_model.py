@@ -112,6 +112,7 @@ def transform_line_to_scanner_frame(line, x, tf_base_to_camera, compute_jacobian
     t_base2cam = tf_base_to_camera[0:2] 
     t_base2cam = np.asarray(t_base2cam)
     t_base2cam = np.reshape(t_base2cam, (2, 1))
+<<<<<<< HEAD
     
     print(R_world2base)
     
@@ -120,22 +121,16 @@ def transform_line_to_scanner_frame(line, x, tf_base_to_camera, compute_jacobian
     # print(t_base2cam)
     
     #pdb.set_trace()
+=======
+
+>>>>>>> d74cc4223d92a063580cbba4a93fa23f077fc70f
     
     #Pose of the camera in the world frame
     # pos_cam = np.dot(np.linalg.inv(R_world2base), t_base2cam) + t_world2base
-    pos_cam = np.matmul(np.transpose(R_world2base), t_base2cam) + t_world2base
-    
-    # print(pos_cam)
-    
-    # print(np.linalg.inv(R_world2base).shape)
-    
-    
-    # print(t_base2cam)
-    # print(np.dot(np.linalg.inv(R_world2base), t_base2cam))
+    pos_cam = np.matmul((R_world2base), t_base2cam) + t_world2base
     
     theta_cam = x[2] + tf_base_to_camera[2]
-    
-    # print(pos_cam[0, 0])
+
     
     alpha_cam = line[0] - theta_cam
     d = np.linalg.norm(pos_cam, 2)
@@ -144,13 +139,21 @@ def transform_line_to_scanner_frame(line, x, tf_base_to_camera, compute_jacobian
     # print(theta_world2cam)
     
     r_cam = line[1] - d*np.cos(line[0]-theta_world2cam)
-    # r_cam = line[1] - d*np.cos(line[0]-theta_cam)
     
-    # print(tf_base_to_camera[2])
+    
+    
+    Hx = np.zeros((2, 3))
+    Hx[0, 2] = -1
+    Hx[1, 0] = -np.cos(line[0])
+    Hx[1, 1] = -np.sin(line[0])
+    d = np.linalg.norm(t_base2cam, 2)
+    beta = np.arctan2(t_base2cam[1], t_base2cam[0])
+    
+    Hx[1, 2] = d*np.sin(x[2]+beta-line[0])
+    
     
     h = np.array([alpha_cam, r_cam])
 
-    Hx = np.zeros((2, 3))
 
     ########## Code ends here ##########
 
