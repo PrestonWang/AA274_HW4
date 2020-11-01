@@ -210,6 +210,7 @@ def validate_localization_compute_innovations():
                               NoiseParams['g'])
 
     for i in range(T_scans):
+        print(i)
         ekf_loc.x, ekf_loc.Sigma = validation_input[i]
         alpha, r, Q_raw, _, _ = ExtractLines(scans[0,i,:],
                                              scans[1,i,:],
@@ -231,6 +232,12 @@ def validate_localization_compute_innovations():
         H_error = sum([np.linalg.norm(H_list[j] - H_list_ref[k]) for j, k in enumerate(permutation)])
         if v_error + R_error + H_error > 1e-3:
             print("You may have an error in EkfLocalization.compute_innovations.")
+            print("v_error", v_error)
+            print("R_error", R_error)
+            print("H_error", H_error)
+            print("v", v_list, v_list_ref)
+            print("R", R_list, R_list_ref)
+            print("H", H_list, H_list_ref)
             return False
 
     print("EkfLocalization.compute_innovations() seems to be correct")
