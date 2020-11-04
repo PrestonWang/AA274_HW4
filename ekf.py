@@ -86,6 +86,13 @@ class Ekf(object):
         ########## Code starts here ##########
         # TODO: Update self.x, self.Sigma.
 
+        # Predict step for Kalman Gain, K
+        # S = H*self.Sigma*np.transpose(H) + Q
+        # K = self.Sigma*np.transpose(H)*np.linalg.inv(S)
+        
+        # # Update Step
+        # self.x = self.x + K*z
+        # self.Sigma = self.Sigma - K*S*np.transpose(K)
 
         ########## Code ends here ##########
 
@@ -161,6 +168,11 @@ class EkfLocalization(Ekf):
         # HINT: The scipy.linalg.block_diag() function may be useful.
         # HINT: A list can be unpacked using the * (splat) operator. 
 
+        # pdb.set_trace()
+
+        Q = scipy.linalg.block_diag(*Q_list)
+        H = np.vstack(tuple(H_list))
+        z = np.vstack(tuple(v_list))
 
         ########## Code ends here ##########
 
