@@ -217,17 +217,18 @@ class EkfLocalization(Ekf):
         d = np.zeros((num_I, num_J))
         for i in range(num_I):
             # calculate innovation
-            v_r = z_raw[1,i] - hs[1,:]
             v_alpha = angle_diff(z_raw[0,i], hs[0,:])
+            v_r = z_raw[1,i] - hs[1,:]
             v = np.vstack((v_alpha, v_r))
 
             # calculate innovation covariance
             S = list()
             for j in range(num_J):
                 H = Hs[j]
-                S.append(np.matmul(H, np.matmul(self.Sigma, np.transpose(H))) + Q_raw[i])
-                d[i,j] = np.matmul(np.transpose(v[:,j]), np.matmul(np.linalg.inv(S[j]), v[:,j]))
-            if np.min(d[i,:]) < self.g:
+                S = np.matmul(H, np.matmul(self.Sigma, np.transpose(H))) + Q_raw[i]
+                # calculate Mahalanobis distance
+                d[i,j] = np.matmul(np.transpose(v[:,j]), np.matmul(np.linalg.inv(S), v[:,j]))
+            if np.min(d[i,:]) < self.g**2:
                 line_index = np.argmin(d[i,:])
                 v_list.append(v[:,line_index])
                 Q_list.append(Q_raw[i])
