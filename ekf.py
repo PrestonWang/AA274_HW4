@@ -317,8 +317,10 @@ class EkfSlam(Ekf):
         # TODO: Compute g, Gx, Gu.
         # HINT: This should be very similar to EkfLocalization.transition_model() and take 1-5 lines of code.
         # HINT: Call tb.compute_dynamics() with the correct elements of self.x
-
-
+        (g_new, gx_new, gu_new) = tb.compute_dynamics(self.x[0:3], u, dt, compute_jacobians=True)
+        g[0:3] = g_new
+        Gx[0:3, 0:3] = gx_new
+        Gu[0:3, 0:2] = gu_new
         ########## Code ends here ##########
 
         return g, Gx, Gu
@@ -344,7 +346,9 @@ class EkfSlam(Ekf):
         ########## Code starts here ##########
         # TODO: Compute z, Q, H.
         # Hint: Should be identical to EkfLocalization.measurement_model().
-
+        Q = scipy.linalg.block_diag(*Q_list)
+        H = np.vstack(tuple(H_list))
+        z = np.hstack(tuple(v_list))
 
         ########## Code ends here ##########
 
@@ -374,7 +378,30 @@ class EkfSlam(Ekf):
         # TODO: Compute v_list, Q_list, H_list.
         # HINT: Should be almost identical to EkfLocalization.compute_innovations(). What is J now?
         # HINT: Instead of getting world-frame line parameters from self.map_lines, you must extract them from the state self.x.
+        v_list = list()
+        Q_list = list()
+        H_list = list()
+        num_I = len(Q_raw)
+        num_J = len(Hs)
+        d = np.zeros((num_I, num_J))
+        for i in range(num_I):
+            # calculate innovation
+            v_alpha = angle_diff(z_raw[0, i], hs[0, :])
+            v_r = z_raw[1, i] - hs[1, :]
+            v = np.vstack((v_alpha, v_r))
 
+            # calculate innovation covariance
+            S = list()
+            for j in range(num_J):
+                H = Hs[j]
+                S = np.matmul(H, np.matmul(self.Sigma, np.transpose(H))) + Q_raw[i]
+                # calculate Mahalanobis distance
+                d[i, j] = np.matmul(np.transpose(v[:, j]), np.matmul(np.linalg.inv(S), v[:, j]))
+            if np.min(d[i, :]) < self.g ** 2:
+                line_index = np.argmin(d[i, :])
+                v_list.append(v[:, line_index])
+                Q_list.append(Q_raw[i])
+                H_list.append(Hs[line_index])
 
         ########## Code ends here ##########
 
@@ -399,6 +426,8 @@ class EkfSlam(Ekf):
             # HINT: The first 3 columns of Hx should be populated using the same approach as in EkfLocalization.compute_predicted_measurements().
             # HINT: The first two map lines (j=0,1) are fixed so the Jacobian of h wrt the alpha and r for those lines is just 0. 
             # HINT: For the other map lines (j>2), write out h in terms of alpha and r to get the Jacobian Hx.
+            h_2, Hx_2 = tb.transform_line_to_scanner_frame(self.map_lines[:, j], self.x, self.tf_base_to_camera,
+                                                       compute_jacobian=True)
 
 
             # First two map lines are assumed fixed so we don't want to propagate
