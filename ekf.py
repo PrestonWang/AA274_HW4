@@ -42,7 +42,7 @@ class Ekf(object):
 
         ########## Code starts here ##########
         # TODO: Update self.x, self.Sigma.
-
+        
     	self.x = g
         #pdb.set_trace()
         self.Sigma = Gx*self.Sigma*np.transpose(Gx) + dt*np.dot(Gu, np.dot(self.R, np.transpose(Gu)))
@@ -77,6 +77,9 @@ class Ekf(object):
         Output:
             None - internal belief state (self.x, self.Sigma) should be updated.
         """
+        
+        # pdb.set_trace()
+        
         z, Q, H = self.measurement_model(z_raw, Q_raw)
         if z is None:
             # Don't update if measurement is invalid
@@ -87,12 +90,12 @@ class Ekf(object):
         # TODO: Update self.x, self.Sigma.
 
         # Predict step for Kalman Gain, K
-        # S = H*self.Sigma*np.transpose(H) + Q
-        # K = self.Sigma*np.transpose(H)*np.linalg.inv(S)
+        S = np.matmul(H, np.matmul(self.Sigma, np.transpose(H))) + Q
+        K = np.matmul(self.Sigma, np.matmul(np.transpose(H), np.linalg.inv(S)))
         
-        # # Update Step
-        # self.x = self.x + K*z
-        # self.Sigma = self.Sigma - K*S*np.transpose(K)
+        # Update Step
+        self.x = self.x + np.matmul(K, z)
+        self.Sigma = self.Sigma - np.matmul(K, np.matmul(S, np.transpose(K)))
 
         ########## Code ends here ##########
 
@@ -172,7 +175,7 @@ class EkfLocalization(Ekf):
 
         Q = scipy.linalg.block_diag(*Q_list)
         H = np.vstack(tuple(H_list))
-        z = np.vstack(tuple(v_list))
+        z = np.hstack(tuple(v_list))
 
         ########## Code ends here ##########
 
