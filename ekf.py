@@ -45,7 +45,7 @@ class Ekf(object):
         
     	self.x = g
         #pdb.set_trace()
-        self.Sigma = Gx*self.Sigma*np.transpose(Gx) + dt*np.dot(Gu, np.dot(self.R, np.transpose(Gu)))
+        self.Sigma = np.matmul(Gx, np.matmul(self.Sigma,np.transpose(Gx))) + dt*np.matmul(Gu, np.matmul(self.R, np.transpose(Gu)))
 
         ########## Code ends here ##########
 
@@ -426,10 +426,45 @@ class EkfSlam(Ekf):
             # HINT: The first 3 columns of Hx should be populated using the same approach as in EkfLocalization.compute_predicted_measurements().
             # HINT: The first two map lines (j=0,1) are fixed so the Jacobian of h wrt the alpha and r for those lines is just 0. 
             # HINT: For the other map lines (j>2), write out h in terms of alpha and r to get the Jacobian Hx.
-            h_j, Hx_j = tb.transform_line_to_scanner_frame(np.array([alpha,r]), self.x, self.tf_base_to_camera,
+            h, Hx_x= tb.transform_line_to_scanner_frame(np.array([alpha,r]), self.x, self.tf_base_to_camera,
                                                        compute_jacobian=True)
-            hs[:,j] = h_j
+            Hx[:,0:3] = Hx_x
+            # Rotation matrix from the world frame to the base frame
+            x = self.x[0:3]
+            line = np.array([alpha, r])
+            tf_base_to_camera = self.tf_base_to_camera
+            # Rotation matrix from the world frame to the base frame
+            c, s = np.cos(x[2]), np.sin(x[2])
+            R_world2base = np.array([[c, -s], [s, c]])
 
+            # Translation vector from the world frame to the base frame
+            t_world2base = x[0:2]
+            t_world2base = np.asarray(t_world2base)
+            t_world2base = np.reshape(t_world2base, (2, 1))
+
+            # Rotation matrix from the base frame to the camera frame
+            c, s = np.cos(tf_base_to_camera[2]), np.sin(tf_base_to_camera[2])
+            R_base2cam = np.array([[c, -s], [s, c]])
+
+            # Translation vector from the base frame to the camera frame
+            t_base2cam = tf_base_to_camera[0:2]
+            t_base2cam = np.asarray(t_base2cam)
+            t_base2cam = np.reshape(t_base2cam, (2, 1))
+            # Pose of the camera in the world frame
+            # pos_cam = np.dot(np.linalg.inv(R_world2base), t_base2cam) + t_world2base
+            pos_cam = np.matmul((R_world2base), t_base2cam) + t_world2base
+
+            theta_cam = x[2] + tf_base_to_camera[2]
+
+            alpha_cam = line[0] - theta_cam
+            d = np.linalg.norm(pos_cam, 2)
+            theta_world2cam = np.arctan2(pos_cam[1], pos_cam[0])
+
+            # print(theta_world2cam)
+
+            r_cam = line[1] - d * np.cos(line[0] - theta_world2cam)
+            Hx_j = np.eye(2)
+            Hx_j[1,0] = d*np.sin(alpha - theta_world2cam)
             # First two map lines are assumed fixed so we don't want to propagate
             # any measurement correction to them.
             if j >= 2:
