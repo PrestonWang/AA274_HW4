@@ -426,7 +426,7 @@ class EkfSlam(Ekf):
             # HINT: The first 3 columns of Hx should be populated using the same approach as in EkfLocalization.compute_predicted_measurements().
             # HINT: The first two map lines (j=0,1) are fixed so the Jacobian of h wrt the alpha and r for those lines is just 0. 
             # HINT: For the other map lines (j>2), write out h in terms of alpha and r to get the Jacobian Hx.
-            h_2, Hx_2 = tb.transform_line_to_scanner_frame(self.map_lines[:, j], self.x, self.tf_base_to_camera,
+            h, Hx = tb.transform_line_to_scanner_frame(np.array([alpha,r]), self.x, self.tf_base_to_camera,
                                                        compute_jacobian=True)
 
 
