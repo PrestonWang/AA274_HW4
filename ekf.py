@@ -426,14 +426,14 @@ class EkfSlam(Ekf):
             # HINT: The first 3 columns of Hx should be populated using the same approach as in EkfLocalization.compute_predicted_measurements().
             # HINT: The first two map lines (j=0,1) are fixed so the Jacobian of h wrt the alpha and r for those lines is just 0. 
             # HINT: For the other map lines (j>2), write out h in terms of alpha and r to get the Jacobian Hx.
-            h, Hx = tb.transform_line_to_scanner_frame(np.array([alpha,r]), self.x, self.tf_base_to_camera,
+            h_j, Hx_j = tb.transform_line_to_scanner_frame(np.array([alpha,r]), self.x, self.tf_base_to_camera,
                                                        compute_jacobian=True)
-
+            hs[:,j] = h_j
 
             # First two map lines are assumed fixed so we don't want to propagate
             # any measurement correction to them.
             if j >= 2:
-                Hx[:,idx_j:idx_j+2] = np.eye(2)  # FIX ME!
+                Hx[:,idx_j:idx_j+2] = Hx_j  # FIX ME!
             ########## Code ends here ##########
 
             h, Hx = tb.normalize_line_parameters(h, Hx)
